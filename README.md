@@ -14,33 +14,11 @@ If this is your first time running this analysis on your computer, you should fi
 ``` r
 # Install the latest version of Bioconductor
 source("https://bioconductor.org/biocLite.R")
-```
-
-    ## Bioconductor version 3.4 (BiocInstaller 1.24.0), ?biocLite for help
-
-``` r
 biocLite()
-```
 
-    ## BioC_mirror: https://bioconductor.org
-
-    ## Using Bioconductor 3.4 (BiocInstaller 1.24.0), R 3.3.2 (2016-10-31).
-
-    ## Old packages: 'AnnotationDbi', 'data.table', 'DBI', 'GenomeInfoDb',
-    ##   'GenomicFeatures', 'GenomicRanges', 'globals', 'rtracklayer', 'SparseM',
-    ##   'mgcv', 'nlme'
-
-``` r
 # Install the tidyverse
 install.packages('tidyverse')
 ```
-
-    ## Installing package into '/Users/ericbryant/R/library/user'
-    ## (as 'lib' is unspecified)
-
-    ## 
-    ## The downloaded binary packages are in
-    ##  /var/folders/v6/df1xbjcj5s3bn6jb4h2d80xr0000gn/T//RtmpRZEt7h/downloaded_packages
 
 Phew! I'm exhausted, but we shall persist!
 

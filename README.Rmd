@@ -20,7 +20,7 @@ If this is your first time running this analysis on your computer, you should fi
 2. Install [Rstudio](https://www.rstudio.com/products/rstudio/download)
 3. Open Rstudio and run the following commands to install [Bioconductor](http://bioconductor.org) and the [tidyverse](http://tidyverse.org)
 
-```{r}
+```{r eval = FALSE}
 # Install the latest version of Bioconductor
 source("https://bioconductor.org/biocLite.R")
 biocLite()
