@@ -1,0 +1,130 @@
+---
+title: "Aligning reads for pooled CRISPRi/a screens"
+author: "Eric Bryant"
+date: "3/10/2017"
+output:
+  md_document:
+    variant: markdown_github
+---
+
+This is a sample analysis of a pooled CRISPRa NGS experiment. Our starting materials are:
+
+1. Forward and reverse sgRNA barcode reference files in fasta format (e.g. `CRISPRa_v2_human.trim_1_29_forward.fa`)
+2. A corresponding reference annotation file (e.g. `CRISPRa_v2_human`)
+3. Sequence files (`*.fastq.gz`)
+4. Code in this repository located in the `R` directory
+
+If this is your first time running this analysis on your computer, you should first install a few items. Namely:
+
+1. Install [R](https://cloud.r-project.org)
+2. Install [Rstudio](https://www.rstudio.com/products/rstudio/download)
+3. Open Rstudio and run the following commands to install [Bioconductor](http://bioconductor.org) and the [tidyverse](http://tidyverse.org)
+
+```{r}
+# Install the latest version of Bioconductor
+source("https://bioconductor.org/biocLite.R")
+biocLite()
+
+# Install the tidyverse
+install.packages('tidyverse')
+```
+
+Phew! I'm exhausted, but we shall persist!
+
+To begin our analysis, we will first load up all of the software requirements using the following commands:
+
+```{r message = F}
+library(tidyverse)
+library(stringr)
+requireNamespace('Biostrings')
+# The quoted strings are file paths to some R scripts available in this GitHub 
+# code repository that contain some helpful functions. Source them to reap their benefits!
+source('R/functions/tidyseq.R')
+source('R/functions/read-sequences.R')
+source('R/functions/count-sgRNA.R')
+source('R/functions/convert-sgRNA-reference-to-CSV.R')
+source('R/functions/annotate-sequence-samples.R')
+```
+
+Now that we're all set up, the fun begins! I first convert the reference sequences to a CSV file. Why? I just find this tabular format easier to work with. To convert the reference sequences I use the handy dandy `conver_sgRNA_reference_to_CSV` function. It will take a few seconds because, well, these reference files are big-ish, and my code is slow.
+
+```{r}
+convert_sgRNA_reference_to_CSV(
+  # What directory should the resulting files be written to?
+  dir = 'data/guide-reference', 
+  # What will the name of this version of the sgRNA library be?
+  vsn_sgRNA = 'CRISPRa-v2-human-29-top5-h1-h2-h3-h4-h5-h6-h7', 
+  # What is the path to the forward oriented fasta reference file?
+  fwd_fasta = 'data/guide-reference/CRISPRa_v2_human.trim_1_29_forward.fa',
+  # What is the path to the reverse oriented fasta reference file?
+  rev_fasta = 'data/guide-reference/CRISPRa_v2_human.trim_1_29_reverse.fa',
+  # What is the path to the corresponding reference annotation file?
+  lib_tbl   = 'data/guide-reference/CRISPRa_v2_human_librarytable.txt',
+  # What sublibraries did you use to make your collection?
+  sublibs   = c(
+    'h1_top5'  = 'Kinases, phosphatases, and drug targets',
+    'h2_top5'  = 'Cancer and apoptosis',
+    'h3_top5'  = 'Stress proteostasis',
+    'h4_top5'  = '?',
+    'h5_top5'  = 'Gene expression',
+    'h6_top5'  = '??',
+    'h7_top5'  = 'Unassigned'#,
+    #  'h1_supp5' = 'Kinases, phosphatases, and drug targets',
+    #  'h2_supp5' = 'Cancer and apoptosis',
+    #  'h3_supp5' = 'Stress proteostasis',
+    #  'h4_supp5' = '?',
+    #  'h5_supp5' = 'Gene expression',
+    #  'h6_supp5' = '??',
+    #  'h7_supp5' = 'Unassigned'
+  )
+)
+```
+
+If you have succeeded, you should have a custom reference table for your sgRNA library. Hooray! If you're curious what these files look like, you can read them in and check there contents with the following commands. Note that three files have been written. One has all possiple guides, one is your unambiguously mapped sub-collection, and another is a set of ambiguously mapped guides (problems to be delt with at a later time?).
+
+```{r message = FALSE}
+sgRNA <- read_csv('data/guide-reference/CRISPRa-v2-human-29-top5-h1-h2-h3-h4-h5-h6-h7.csv')
+sgRNA_ambiguous <- read_csv('data/guide-reference/CRISPRa-v2-human-29-top5-h1-h2-h3-h4-h5-h6-h7-ambiguous.csv')
+# Let's have a look at each table. Also try clicking on the data set in the "Environment" panel in Rstudio
+sgRNA
+sgRNA_ambiguous
+```
+
+
+Now we will annotate your sequence samples using the handy dandy `annotate_sequence_samples` function. Note that this function is a little delicate as it uses your file names and time stampts to figure some things out automagically, so if your file name format changes this function may need to be fixed. Of course, you could always just make the annotation file by hand!
+
+```{r}
+annotate_sequence_samples(
+  # Where are your sequence files?
+  dir = 'data/fastq',
+  # Where do you want to save this file and what should we name it?
+  name = 'data/sample-annotation.csv'
+)
+```
+
+Let's have a look at that file!
+
+```{r message = FALSE}
+fastq <- read_csv('data/sample-annotation.csv')
+fastq
+```
+
+Time for the heavy lifting! We will count barcodes using the the `count_sgRNA` function. This will take a bit of time depending on how big your sequence files are. Be patient, grab a coffee!
+
+```{r eval = FALSE}
+# Trimming is key here as the counting is based on perfect matches to your sgRNA reference table
+count_sgRNA(
+  # This is your annotation table which contains paths and sample information for all
+  # of your fastq sequence files
+  fastq, 
+  # This is your sgRNA library reference table that contains the expected sequences
+  sgRNA,
+  # The following settings will keep bases 37 to 64 of each read found in your fastq files
+  # and match this sequence to your sgRNA reference table
+  trim_before = 37, 
+  trim_after = 64,
+  # Where should the counts be saved (this directory should already exist)
+  dir = 'data/counts'
+)
+```
+
